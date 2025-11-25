@@ -10,7 +10,7 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{collections::BTreeMap, str::FromStr};
-use to_and_fro::{output_case, ToAndFro};
+use to_and_fro::{ToAndFro, output_case};
 
 use crate::helpers::{
     de_iso_8601, de_rfc3339, de_service_time, deserialize_path, opt_de_rfc3339, opt_ser_rfc3339,

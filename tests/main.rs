@@ -1,4 +1,5 @@
 #[allow(dead_code)]
+#[allow(clippy::needless_update)]
 #[cfg(test)]
 pub mod test {
     use std::{collections::BTreeMap, future::Future, pin::Pin, sync::Arc};
