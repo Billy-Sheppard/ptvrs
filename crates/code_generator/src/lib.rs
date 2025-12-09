@@ -3,10 +3,10 @@ use std::{collections::HashMap, rc::Rc, str::FromStr};
 
 use heck::{ToSnakeCase, ToTitleCase, ToUpperCamelCase};
 use itertools::Itertools;
-use syn::{DeriveInput, parse::Parse, spanned::Spanned};
 use std::io::Write;
+use syn::{DeriveInput, parse::Parse, spanned::Spanned};
 
-use crate::types::{Context, PathName, SwaggerFile, ToRustTypeName, TypePath};
+use crate::types::{Context, SwaggerFile, ToRustTypeName, TypePath};
 
 struct SwaggerClientArgs {
     path: String,
@@ -200,7 +200,7 @@ fn derive_actual(
     let context = Rc::new(Context {
         scope: std::cell::RefCell::new(codegen::Scope::new()),
         constant_parameters,
-        strip_prefix: args.strip_prefix.clone(),
+        _strip_prefix: args.strip_prefix.clone(),
         types: names,
         name_stack: Default::default(),
         extra_types: args.extra_names,
@@ -238,15 +238,14 @@ fn derive_actual(
         })
         .into_grouping_map_by(|(k, _)| k.elements.front().unwrap().clone().to_string())
         .collect::<HashMap<_, _>>();
-if let Some(ref mut debug_file) = debug_file {
+    if let Some(ref mut debug_file) = debug_file {
         use std::io::Write;
-writeln!(debug_file, 
+        writeln!(debug_file,
     r#"| Feature           | Endpoint                                                                                                                     | Status | Notes                             |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------ | --------------------------------- |"#).ok();
     }
     for (section, paths) in paths {
-
-        for (i,(path_name, path_item)) in paths.iter().enumerate() {
+        for (i, (path_name, path_item)) in paths.iter().enumerate() {
             //        println!("path_name: {:?}", path_name);
             for (method, operation) in &path_item.methods {
                 let ret_type = operation
@@ -359,9 +358,9 @@ writeln!(debug_file,
                 );
 
                 let mut scope = context.scope.borrow_mut();
-                let scope = scope.new_impl(&input.ident.to_string());
+                let scope = scope.new_impl(input.ident.to_string());
                 let mut func = scope
-                    .new_fn(&name.to_snake_case())
+                    .new_fn(name.to_snake_case())
                     .vis("pub")
                     .ret(format!("Result<{},Error>", ret_type));
                 let mut docs = format!(
@@ -370,18 +369,18 @@ writeln!(debug_file,
                 );
                 if let Some(ref summary) = operation.summary {
                     docs.push_str("\n\n");
-                    docs.push_str(&summary);
+                    docs.push_str(summary);
                 }
                 func.doc(&docs);
                 func.set_async(true);
                 func.arg_ref_self();
                 for (param_name, rust_type, _) in path_params.iter() {
                     func = func.arg(
-                        &param_name,
+                        param_name,
                         if rust_type == "String" {
                             "impl AsRef<str>"
                         } else {
-                            &rust_type
+                            rust_type
                         },
                     );
                 }
@@ -428,7 +427,6 @@ writeln!(debug_file,
                         ).ok();
                     }
                 }
-
             }
         }
     }

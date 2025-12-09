@@ -45,7 +45,7 @@ pub struct Context {
     pub constant_parameters: Vec<String>,
     // probably not the best way, but it makes sense
     pub name_stack: RefCell<VecDeque<String>>,
-    pub strip_prefix: Option<String>,
+    pub _strip_prefix: Option<String>,
 }
 
 impl Context {
@@ -57,6 +57,7 @@ impl Context {
         ContextHandle { context: self }
     }
 
+    #[allow(clippy::let_and_return)]
     pub fn get_name(&self) -> String {
         let name = self
             .name_stack
@@ -227,7 +228,7 @@ impl ToRustTypeName for TypeTagged {
 
                     //println!("Generating enum: {}", &enum_name);
                     if let Some(enuma) = context.extra_types.get(&enum_name) {
-                        return Ok(enuma.clone());
+                        Ok(enuma.clone())
                     } else {
                         let enum_name = context.get_name();
                         context!(context, scope);
@@ -273,7 +274,7 @@ impl ToRustTypeName for TypeTagged {
                         .context("Expected extra name for enum")?
                         .to_upper_camel_case();
                     if let Some(enuma) = context.extra_types.get(&enum_name) {
-                        return Ok(enuma.clone());
+                        Ok(enuma.clone())
                     } else {
                         let enum_name = context.get_name();
                         context!(context, scope);
@@ -337,7 +338,7 @@ impl ToRustTypeName for TypeTagged {
                     .context("Expected extra name for object")?
                     .to_upper_camel_case();
                 if let Some(structa) = context.extra_types.get(&struct_name) {
-                    return Ok(structa.clone());
+                    Ok(structa.clone())
                 } else {
                     let struct_name = context.get_name();
                     //                    println!("Generating struct: {}", struct_name);
@@ -477,13 +478,13 @@ mod locations {
         fn from_enum(_loc: &InLocation) -> Option<Self> {
             Some(*_loc)
         }
-        fn to_enum(&self) -> InLocation {
+        fn _to_enum(&self) -> InLocation {
             *self
         }
     }
     pub trait AsInLocation: Serialize + for<'de> Deserialize<'de> {
         fn from_enum(loc: &InLocation) -> Option<Self>;
-        fn to_enum(&self) -> InLocation;
+        fn _to_enum(&self) -> InLocation;
     }
 
     impl AsInLocation for Query {
@@ -493,7 +494,7 @@ mod locations {
                 _ => None,
             }
         }
-        fn to_enum(&self) -> InLocation {
+        fn _to_enum(&self) -> InLocation {
             InLocation::Query
         }
     }
@@ -505,7 +506,7 @@ mod locations {
                 _ => None,
             }
         }
-        fn to_enum(&self) -> InLocation {
+        fn _to_enum(&self) -> InLocation {
             InLocation::Header
         }
     }
@@ -517,7 +518,7 @@ mod locations {
                 _ => None,
             }
         }
-        fn to_enum(&self) -> InLocation {
+        fn _to_enum(&self) -> InLocation {
             InLocation::Path
         }
     }
@@ -546,21 +547,11 @@ pub struct Response {
     pub schema: Option<Type>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ParameterLocations {
     pub query: Vec<Parameter<locations::Query>>,
     pub header: Vec<Parameter<locations::Header>>,
     pub path: Vec<Parameter<locations::Path>>,
-}
-
-impl Default for ParameterLocations {
-    fn default() -> Self {
-        ParameterLocations {
-            query: Vec::new(),
-            header: Vec::new(),
-            path: Vec::new(),
-        }
-    }
 }
 
 impl<'de> Deserialize<'de> for ParameterLocations {
@@ -572,58 +563,46 @@ impl<'de> Deserialize<'de> for ParameterLocations {
         let query = params
             .iter()
             .filter_map(|x| {
-                if let Some(q) = locations::Query::from_enum(&x.in_) {
-                    Some(Parameter {
-                        name: x.name.clone(),
-                        in_: q,
-                        required: x.required,
-                        r#type: Type {
-                            description: x.r#type.description.clone(),
-                            schema_object: x.r#type.schema_object.clone(),
-                        },
-                        description: x.description.clone(),
-                    })
-                } else {
-                    None
-                }
+                locations::Query::from_enum(&x.in_).map(|q| Parameter {
+                    name: x.name.clone(),
+                    in_: q,
+                    required: x.required,
+                    r#type: Type {
+                        description: x.r#type.description.clone(),
+                        schema_object: x.r#type.schema_object.clone(),
+                    },
+                    description: x.description.clone(),
+                })
             })
             .collect::<Vec<_>>();
         let header = params
             .iter()
             .filter_map(|x| {
-                if let Some(h) = locations::Header::from_enum(&x.in_) {
-                    Some(Parameter {
-                        name: x.name.clone(),
-                        in_: h,
-                        required: x.required,
-                        r#type: Type {
-                            description: x.r#type.description.clone(),
-                            schema_object: x.r#type.schema_object.clone(),
-                        },
-                        description: x.description.clone(),
-                    })
-                } else {
-                    None
-                }
+                locations::Header::from_enum(&x.in_).map(|h| Parameter {
+                    name: x.name.clone(),
+                    in_: h,
+                    required: x.required,
+                    r#type: Type {
+                        description: x.r#type.description.clone(),
+                        schema_object: x.r#type.schema_object.clone(),
+                    },
+                    description: x.description.clone(),
+                })
             })
             .collect::<Vec<_>>();
         let path = params
             .iter()
             .filter_map(|x| {
-                if let Some(p) = locations::Path::from_enum(&x.in_) {
-                    Some(Parameter {
-                        name: x.name.clone(),
-                        in_: p,
-                        required: x.required,
-                        r#type: Type {
-                            description: x.r#type.description.clone(),
-                            schema_object: x.r#type.schema_object.clone(),
-                        },
-                        description: x.description.clone(),
-                    })
-                } else {
-                    None
-                }
+                locations::Path::from_enum(&x.in_).map(|p| Parameter {
+                    name: x.name.clone(),
+                    in_: p,
+                    required: x.required,
+                    r#type: Type {
+                        description: x.r#type.description.clone(),
+                        schema_object: x.r#type.schema_object.clone(),
+                    },
+                    description: x.description.clone(),
+                })
             })
             .collect::<Vec<_>>();
         Ok(ParameterLocations {
@@ -750,6 +729,7 @@ pub struct Type {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(unused)]
 pub struct SwaggerFile {
     pub swagger: SwaggerVersion,
     pub info: Info,

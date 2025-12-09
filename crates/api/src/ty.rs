@@ -8,7 +8,6 @@ use chrono::NaiveDate;
 use derive_more::{Display, From};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::str::FromStr;
 use to_and_fro::ToAndFro;
 
