@@ -49,13 +49,17 @@ impl Client {
         let res = reqwest::get(&url).await?;
         if !res.status().is_success() {
             let status = res.status();
-            if let Ok(ApiError { message, .. }) = res.json().await {
+            let text = res.text().await?;
+            // dbg!(&text);
+            if let Ok(ApiError { message, .. }) = serde_json::from_str(&text) {
                 return Err(anyhow::anyhow!("Request failed: {} - {}", status, message));
             }
             return Err(anyhow::anyhow!("Request failed: {}", status));
         }
+        let text = res.text().await?;
+        // dbg!(&text);
 
-        Ok(res.json().await?)
+        serde_json::from_str(&text).map_err(|e| dbg!(e).into())
     }
 
     /* > Departures */
